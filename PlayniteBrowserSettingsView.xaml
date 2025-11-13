@@ -7,7 +7,7 @@
              d:DesignHeight="400" d:DesignWidth="600">
     <StackPanel>
         <TextBlock Text="Browser Executable Path:" Margin="0,0,0,5"/>
-        <DockPanel Margin="0,0,0,20">
+        <DockPanel Margin="0,0,0,10">
             <Button Content="Browse..."
                     Command="{Binding BrowseCommand}"
                     DockPanel.Dock="Right"
@@ -15,6 +15,11 @@
                     Padding="10,0"/>
             <TextBox Text="{Binding Settings.BrowserExecutablePath}"/>
         </DockPanel>
+
+        <CheckBox Content="Use shared browser profile for all games"
+                  IsChecked="{Binding Settings.UseSharedProfile}"
+                  Margin="0,0,0,20"
+                  ToolTip="When enabled, all games will share the same browser profile (cookies, cache, etc.). When disabled, each game gets its own isolated profile. This can lead to issues if you launch multiple games at once"/>
 
         <TextBlock Text="Browser Games:" Margin="0,0,0,5"/>
         <DataGrid ItemsSource="{Binding Settings.BrowserGames}"

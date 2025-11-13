@@ -34,6 +34,24 @@ namespace PlayniteBrowser
             };
         }
 
+        private string GetProfilePath(PlayniteBrowserSettings settings, string gameId)
+        {
+            var dataBasePath = System.IO.Path.Combine(PlayniteApi.Paths.ExtensionsDataPath, "PlayniteBrowser");
+            var profilesBasePath = System.IO.Path.Combine(dataBasePath, "Profiles");
+
+            var profilePath = settings.UseSharedProfile
+                ? System.IO.Path.Combine(profilesBasePath, "Shared")
+                : System.IO.Path.Combine(profilesBasePath, gameId);
+
+            // Ensure the profile directory exists
+            if (!System.IO.Directory.Exists(profilePath))
+            {
+                System.IO.Directory.CreateDirectory(profilePath);
+            }
+
+            return profilePath;
+        }
+
         private string GetFaviconPath(string url, string gameId, string iconsPath)
         {
             try
@@ -243,14 +261,8 @@ namespace PlayniteBrowser
 
             foreach (var browserGame in loadedSettings.BrowserGames)
             {
-                // Create a unique profile directory for each game
-                var profilePath = System.IO.Path.Combine(profilesBasePath, browserGame.GameId);
-
-                // Ensure the profile directory exists
-                if (!System.IO.Directory.Exists(profilePath))
-                {
-                    System.IO.Directory.CreateDirectory(profilePath);
-                }
+                // Get the profile path for this game (shared or individual)
+                var profilePath = GetProfilePath(loadedSettings, browserGame.GameId);
 
                 // Get the favicon for this game
                 var faviconPath = GetFaviconPath(browserGame.Url, browserGame.GameId, iconsPath);
@@ -311,16 +323,8 @@ namespace PlayniteBrowser
                 yield break;
             }
 
-            // Get the profile path for this game
-            var dataBasePath = System.IO.Path.Combine(PlayniteApi.Paths.ExtensionsDataPath, "PlayniteBrowser");
-            var profilesBasePath = System.IO.Path.Combine(dataBasePath, "Profiles");
-            var profilePath = System.IO.Path.Combine(profilesBasePath, browserGame.GameId);
-
-            // Ensure the profile directory exists
-            if (!System.IO.Directory.Exists(profilePath))
-            {
-                System.IO.Directory.CreateDirectory(profilePath);
-            }
+            // Get the profile path for this game (shared or individual)
+            var profilePath = GetProfilePath(loadedSettings, browserGame.GameId);
 
             yield return new AutomaticPlayController(args.Game)
             {

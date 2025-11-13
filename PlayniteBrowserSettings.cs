@@ -39,9 +39,11 @@ namespace PlayniteBrowser
     {
         private string browserExecutablePath = @"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe";
         private ObservableCollection<BrowserGame> browserGames = new ObservableCollection<BrowserGame>();
+        private bool useSharedProfile = false;
 
         public string BrowserExecutablePath { get => browserExecutablePath; set => SetValue(ref browserExecutablePath, value); }
         public ObservableCollection<BrowserGame> BrowserGames { get => browserGames; set => SetValue(ref browserGames, value); }
+        public bool UseSharedProfile { get => useSharedProfile; set => SetValue(ref useSharedProfile, value); }
     }
 
     public class PlayniteBrowserSettingsViewModel : ObservableObject, ISettings
