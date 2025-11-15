@@ -26,10 +26,18 @@
             </ComboBox.Items>
         </ComboBox>
 
-        <CheckBox Content="Use shared browser profile for all games"
-                  IsChecked="{Binding Settings.UseSharedProfile}"
-                  Margin="0,0,0,20"
-                  ToolTip="When enabled, all games will share the same browser profile (cookies, cache, etc.). When disabled, each game gets its own isolated profile. This can lead to issues if you launch multiple games at once"/>
+        <DockPanel Margin="0,0,0,20">
+            <Button Content="Open Shared Profile"
+                    Command="{Binding OpenSharedProfileCommand}"
+                    DockPanel.Dock="Right"
+                    Margin="5,0,0,0"
+                    Padding="10,5"
+                    ToolTip="Launches the browser with the shared profile. Only enabled when 'Use shared browser profile for all games' is checked."/>
+            <CheckBox Content="Use shared browser profile for all games"
+                      IsChecked="{Binding Settings.UseSharedProfile}"
+                      VerticalAlignment="Center"
+                      ToolTip="When enabled, all games will share the same browser profile (cookies, cache, etc.). When disabled, each game gets its own isolated profile. This can lead to issues if you launch multiple games at once"/>
+        </DockPanel>
 
         <TextBlock Text="Browser Games:" Margin="0,0,0,5"/>
         <DataGrid ItemsSource="{Binding Settings.BrowserGames}"
@@ -56,7 +64,12 @@
                     Padding="10,5"/>
             <Button Content="Remove Selected"
                     Command="{Binding RemoveGameCommand}"
+                    Margin="0,0,5,0"
                     Padding="10,5"/>
+            <Button Content="Open Game Profile"
+                    Command="{Binding OpenProfileCommand}"
+                    Padding="10,5"
+                    ToolTip="Launches the browser with the selected game's profile. Use this to install extensions, modify settings, etc. for this specific game."/>
         </StackPanel>
     </StackPanel>
 </UserControl>

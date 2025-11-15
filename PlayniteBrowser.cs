@@ -36,36 +36,14 @@ namespace PlayniteBrowser
 
         private string GetProfilePath(PlayniteBrowserSettings settings, BrowserGame game)
         {
-            var profilePath = System.IO.Path.Combine(PlayniteApi.Paths.ExtensionsDataPath, "Browser");
-            profilePath = System.IO.Path.Combine(profilePath, "Profiles");
-
-            profilePath = System.IO.Path.Combine(profilePath, settings.BrowserType.ToString());
-
-            if (settings.UseSharedProfile)
-            {
-
-                profilePath = System.IO.Path.Combine(profilePath, "Shared");
-
-            }
-            else
-            {
-                var folderName =
-                    new string(game.Name
-                        .Where(c => char.IsLetterOrDigit(c))
-                        .Take(10)
-                        .ToArray())
-                    + "-" + game.GameId.Substring(0, 5);
-
-                if (string.IsNullOrEmpty(folderName))
-                {
-                    folderName = "game";
-                }
-
-                profilePath = System.IO.Path.Combine(profilePath, folderName.ToString());
-            }
+            var profilePath = PlayniteBrowserSettings.GetProfilePath(
+                PlayniteApi.Paths.ExtensionsDataPath,
+                settings.BrowserType,
+                settings.UseSharedProfile,
+                game);
 
             // Ensure the profile directory exists
-            if (!System.IO.Directory.Exists(profilePath))
+            if (!string.IsNullOrEmpty(profilePath) && !System.IO.Directory.Exists(profilePath))
             {
                 System.IO.Directory.CreateDirectory(profilePath);
             }

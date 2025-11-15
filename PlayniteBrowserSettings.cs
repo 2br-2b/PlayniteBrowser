@@ -52,6 +52,41 @@ namespace PlayniteBrowser
         public ObservableCollection<BrowserGame> BrowserGames { get => browserGames; set => SetValue(ref browserGames, value); }
         public bool UseSharedProfile { get => useSharedProfile; set => SetValue(ref useSharedProfile, value); }
         public BrowserType BrowserType { get => browserType; set => SetValue(ref browserType, value); }
+
+        public static string GetProfilePath(string extensionsDataPath, BrowserType browserType, bool useSharedProfile, BrowserGame game)
+        {
+            var profilePath = System.IO.Path.Combine(extensionsDataPath, "Browser");
+            profilePath = System.IO.Path.Combine(profilePath, "Profiles");
+            profilePath = System.IO.Path.Combine(profilePath, browserType.ToString());
+
+            if (useSharedProfile)
+            {
+                profilePath = System.IO.Path.Combine(profilePath, "Shared");
+            }
+            else
+            {
+                if (game == null)
+                {
+                    return null;
+                }
+
+                var folderName =
+                    new string(game.Name
+                        .Where(c => char.IsLetterOrDigit(c))
+                        .Take(10)
+                        .ToArray())
+                    + "-" + game.GameId.Substring(0, 5);
+
+                if (string.IsNullOrEmpty(folderName))
+                {
+                    folderName = "game";
+                }
+
+                profilePath = System.IO.Path.Combine(profilePath, folderName.ToString());
+            }
+
+            return profilePath;
+        }
     }
 
     public class PlayniteBrowserSettingsViewModel : ObservableObject, ISettings
@@ -117,6 +152,74 @@ namespace PlayniteBrowser
                     SelectedGame = null;
                 }
             }, (a) => SelectedGame != null);
+        }
+
+        public RelayCommand<object> OpenProfileCommand
+        {
+            get => new RelayCommand<object>((a) =>
+            {
+                if (SelectedGame == null)
+                    return;
+
+                // Open the selected game's profile (always use individual profile, not shared)
+                var profilePath = PlayniteBrowserSettings.GetProfilePath(
+                    plugin.PlayniteApi.Paths.ExtensionsDataPath,
+                    Settings.BrowserType,
+                    false, // Always use individual profile for selected game
+                    SelectedGame);
+
+                if (!string.IsNullOrEmpty(profilePath))
+                {
+                    LaunchBrowserWithProfile(profilePath);
+                }
+            }, (a) => SelectedGame != null && !Settings.UseSharedProfile);
+        }
+
+        public RelayCommand<object> OpenSharedProfileCommand
+        {
+            get => new RelayCommand<object>((a) =>
+            {
+                // Open the shared profile
+                var profilePath = PlayniteBrowserSettings.GetProfilePath(
+                    plugin.PlayniteApi.Paths.ExtensionsDataPath,
+                    Settings.BrowserType,
+                    true, // Use shared profile
+                    null);
+
+                if (!string.IsNullOrEmpty(profilePath))
+                {
+                    LaunchBrowserWithProfile(profilePath);
+                }
+            }, (a) => Settings.UseSharedProfile);
+        }
+
+        private void LaunchBrowserWithProfile(string profilePath)
+        {
+            // Ensure the profile directory exists before launching browser
+            if (!System.IO.Directory.Exists(profilePath))
+            {
+                System.IO.Directory.CreateDirectory(profilePath);
+            }
+
+            // Build browser arguments based on browser type
+            string arguments;
+            if (Settings.BrowserType == BrowserType.Chromium)
+            {
+                arguments = $"--user-data-dir=\"{profilePath}\"";
+            }
+            else // Firefox
+            {
+                arguments = $"-new-instance -profile \"{profilePath}\"";
+            }
+
+            // Launch the browser with the profile
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = Settings.BrowserExecutablePath,
+                Arguments = arguments,
+                UseShellExecute = true
+            };
+            System.Diagnostics.Process.Start(startInfo);
         }
 
         public PlayniteBrowserSettingsViewModel(PlayniteBrowser plugin)
