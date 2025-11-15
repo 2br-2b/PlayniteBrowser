@@ -17,9 +17,10 @@
             <TextBox Text="{Binding Settings.BrowserExecutablePath}"/>
         </DockPanel>
 
-        <TextBlock Text="Browser Type:" Margin="0,0,0,5"/>
+        <TextBlock Text="Browser Type (auto-detected):" Margin="0,0,0,5"/>
         <ComboBox SelectedItem="{Binding Settings.BrowserType}"
-                  Margin="0,0,0,10">
+                  Margin="0,0,0,10"
+                  ToolTip="Browser type is automatically detected from the executable path. You can manually override if needed.">
             <ComboBox.Items>
                 <x:Static Member="local:BrowserType.Chromium"/>
                 <x:Static Member="local:BrowserType.Firefox"/>

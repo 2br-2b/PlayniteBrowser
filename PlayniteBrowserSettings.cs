@@ -43,15 +43,136 @@ namespace PlayniteBrowser
 
     public class PlayniteBrowserSettings : ObservableObject
     {
-        private string browserExecutablePath = @"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe";
+        private string browserExecutablePath;
         private ObservableCollection<BrowserGame> browserGames = new ObservableCollection<BrowserGame>();
         private bool useSharedProfile = false;
-        private BrowserType browserType = BrowserType.Chromium;
+        private BrowserType browserType;
 
         public string BrowserExecutablePath { get => browserExecutablePath; set => SetValue(ref browserExecutablePath, value); }
         public ObservableCollection<BrowserGame> BrowserGames { get => browserGames; set => SetValue(ref browserGames, value); }
         public bool UseSharedProfile { get => useSharedProfile; set => SetValue(ref useSharedProfile, value); }
         public BrowserType BrowserType { get => browserType; set => SetValue(ref browserType, value); }
+
+        public PlayniteBrowserSettings()
+        {
+            // Detect default browser and set both path and type
+            browserExecutablePath = GetDefaultBrowserPath();
+            browserType = DetectBrowserTypeFromPath(browserExecutablePath);
+        }
+
+        private static string GetDefaultBrowserPath()
+        {
+            try
+            {
+                // Try to get the default browser from Windows registry
+                using (var userChoiceKey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
+                    @"Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice"))
+                {
+                    if (userChoiceKey != null)
+                    {
+                        var progId = userChoiceKey.GetValue("ProgId") as string;
+                        if (!string.IsNullOrEmpty(progId))
+                        {
+                            // Try to find the executable path for this ProgId
+                            using (var commandKey = Microsoft.Win32.Registry.ClassesRoot.OpenSubKey(
+                                $@"{progId}\shell\open\command"))
+                            {
+                                if (commandKey != null)
+                                {
+                                    var command = commandKey.GetValue("") as string;
+                                    if (!string.IsNullOrEmpty(command))
+                                    {
+                                        // Extract the executable path from the command
+                                        // Commands are typically in format: "C:\Path\browser.exe" "%1"
+                                        var exePath = ExtractExecutablePath(command);
+                                        if (!string.IsNullOrEmpty(exePath) && System.IO.File.Exists(exePath))
+                                        {
+                                            return exePath;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Fallback: Try common browser paths
+                var commonPaths = new[]
+                {
+                    @"C:\Program Files\Google\Chrome\Application\chrome.exe",
+                    @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+                    @"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe",
+                    @"C:\Program Files (x86)\BraveSoftware\Brave-Browser\Application\brave.exe",
+                    @"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+                    @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+                    @"C:\Program Files\Mozilla Firefox\firefox.exe",
+                    @"C:\Program Files (x86)\Mozilla Firefox\firefox.exe"
+                };
+
+                foreach (var path in commonPaths)
+                {
+                    if (System.IO.File.Exists(path))
+                    {
+                        return path;
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore errors and fall through to default
+            }
+
+            // Ultimate fallback: Edge (included with Windows 10+)
+            return @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe";
+        }
+
+        private static string ExtractExecutablePath(string command)
+        {
+            if (string.IsNullOrEmpty(command))
+                return null;
+
+            // Remove leading/trailing whitespace
+            command = command.Trim();
+
+            // If it starts with a quote, extract the quoted path
+            if (command.StartsWith("\""))
+            {
+                var endQuoteIndex = command.IndexOf('"', 1);
+                if (endQuoteIndex > 0)
+                {
+                    return command.Substring(1, endQuoteIndex - 1);
+                }
+            }
+
+            // Otherwise, take everything up to the first space (if any)
+            var spaceIndex = command.IndexOf(' ');
+            if (spaceIndex > 0)
+            {
+                return command.Substring(0, spaceIndex);
+            }
+
+            return command;
+        }
+
+        public static BrowserType DetectBrowserTypeFromPath(string executablePath)
+        {
+            if (string.IsNullOrWhiteSpace(executablePath))
+            {
+                return BrowserType.Chromium; // Default to Chromium
+            }
+
+            var pathLower = executablePath.ToLower();
+
+            // Check for Firefox
+            if (pathLower.Contains("firefox") || pathLower.Contains("mozilla"))
+            {
+                return BrowserType.Firefox;
+            }
+
+            // Everything else is assumed to be Chromium-based
+            // This includes: Chrome, Brave, Edge, Opera, Vivaldi, etc.
+            return BrowserType.Chromium;
+        }
 
         public static string GetProfilePath(string extensionsDataPath, BrowserType browserType, bool useSharedProfile, BrowserGame game)
         {
@@ -124,6 +245,8 @@ namespace PlayniteBrowser
                 if (!string.IsNullOrEmpty(selectedPath))
                 {
                     Settings.BrowserExecutablePath = selectedPath;
+                    // Automatically detect and set browser type
+                    Settings.BrowserType = PlayniteBrowserSettings.DetectBrowserTypeFromPath(selectedPath);
                 }
             });
         }
@@ -234,6 +357,11 @@ namespace PlayniteBrowser
             if (savedSettings != null)
             {
                 Settings = savedSettings;
+                // Auto-detect browser type if a path is already set
+                if (!string.IsNullOrWhiteSpace(Settings.BrowserExecutablePath))
+                {
+                    Settings.BrowserType = PlayniteBrowserSettings.DetectBrowserTypeFromPath(Settings.BrowserExecutablePath);
+                }
             }
             else
             {
