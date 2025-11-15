@@ -34,14 +34,35 @@ namespace PlayniteBrowser
             };
         }
 
-        private string GetProfilePath(PlayniteBrowserSettings settings, string gameId)
+        private string GetProfilePath(PlayniteBrowserSettings settings, BrowserGame game)
         {
-            var dataBasePath = System.IO.Path.Combine(PlayniteApi.Paths.ExtensionsDataPath, "PlayniteBrowser");
-            var profilesBasePath = System.IO.Path.Combine(dataBasePath, "Profiles");
+            var profilePath = System.IO.Path.Combine(PlayniteApi.Paths.ExtensionsDataPath, "Browser");
+            profilePath = System.IO.Path.Combine(profilePath, "Profiles");
 
-            var profilePath = settings.UseSharedProfile
-                ? System.IO.Path.Combine(profilesBasePath, "Shared")
-                : System.IO.Path.Combine(profilesBasePath, gameId);
+            profilePath = System.IO.Path.Combine(profilePath, settings.BrowserType.ToString());
+
+            if (settings.UseSharedProfile)
+            {
+
+                profilePath = System.IO.Path.Combine(profilePath, "Shared");
+
+            }
+            else
+            {
+                var folderName =
+                    new string(game.Name
+                        .Where(c => char.IsLetterOrDigit(c))
+                        .Take(10)
+                        .ToArray())
+                    + "-" + game.GameId.Substring(0, 5);
+
+                if (string.IsNullOrEmpty(folderName))
+                {
+                    folderName = "game";
+                }
+
+                profilePath = System.IO.Path.Combine(profilePath, folderName.ToString());
+            }
 
             // Ensure the profile directory exists
             if (!System.IO.Directory.Exists(profilePath))
@@ -262,7 +283,7 @@ namespace PlayniteBrowser
             foreach (var browserGame in loadedSettings.BrowserGames)
             {
                 // Get the profile path for this game (shared or individual)
-                var profilePath = GetProfilePath(loadedSettings, browserGame.GameId);
+                var profilePath = GetProfilePath(loadedSettings, browserGame);
 
                 // Get the favicon for this game
                 var faviconPath = GetFaviconPath(browserGame.Url, browserGame.GameId, iconsPath);
@@ -324,7 +345,20 @@ namespace PlayniteBrowser
             }
 
             // Get the profile path for this game (shared or individual)
-            var profilePath = GetProfilePath(loadedSettings, browserGame.GameId);
+            var profilePath = GetProfilePath(loadedSettings, browserGame);
+
+            // Construct browser-specific arguments
+            string arguments;
+            if (loadedSettings.BrowserType == BrowserType.Firefox)
+            {
+                // Firefox uses -profile flag and doesn't have an app mode like Chromium
+                arguments = $"-new-instance -profile \"{profilePath}\" -kiosk {browserGame.Url}";
+            }
+            else // Chromium
+            {
+                // Chromium uses --user-data-dir and --app flags
+                arguments = $"--user-data-dir=\"{profilePath}\" --app={browserGame.Url}";
+            }
 
             yield return new AutomaticPlayController(args.Game)
             {
@@ -332,7 +366,7 @@ namespace PlayniteBrowser
                 TrackingMode = TrackingMode.Process,
                 Name = "Play in Browser",
                 Path = loadedSettings.BrowserExecutablePath,
-                Arguments = $"--user-data-dir=\"{profilePath}\" --app={browserGame.Url}"
+                Arguments = arguments
             };
         }
 

@@ -10,6 +10,12 @@ using System.Threading.Tasks;
 
 namespace PlayniteBrowser
 {
+    public enum BrowserType
+    {
+        Chromium,
+        Firefox
+    }
+
     public class BrowserGame : ObservableObject
     {
         private string name = string.Empty;
@@ -40,10 +46,12 @@ namespace PlayniteBrowser
         private string browserExecutablePath = @"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe";
         private ObservableCollection<BrowserGame> browserGames = new ObservableCollection<BrowserGame>();
         private bool useSharedProfile = false;
+        private BrowserType browserType = BrowserType.Chromium;
 
         public string BrowserExecutablePath { get => browserExecutablePath; set => SetValue(ref browserExecutablePath, value); }
         public ObservableCollection<BrowserGame> BrowserGames { get => browserGames; set => SetValue(ref browserGames, value); }
         public bool UseSharedProfile { get => useSharedProfile; set => SetValue(ref useSharedProfile, value); }
+        public BrowserType BrowserType { get => browserType; set => SetValue(ref browserType, value); }
     }
 
     public class PlayniteBrowserSettingsViewModel : ObservableObject, ISettings

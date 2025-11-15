@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:PlayniteBrowser"
              mc:Ignorable="d"
              d:DesignHeight="400" d:DesignWidth="600">
     <StackPanel>
@@ -15,6 +16,15 @@
                     Padding="10,0"/>
             <TextBox Text="{Binding Settings.BrowserExecutablePath}"/>
         </DockPanel>
+
+        <TextBlock Text="Browser Type:" Margin="0,0,0,5"/>
+        <ComboBox SelectedItem="{Binding Settings.BrowserType}"
+                  Margin="0,0,0,10">
+            <ComboBox.Items>
+                <x:Static Member="local:BrowserType.Chromium"/>
+                <x:Static Member="local:BrowserType.Firefox"/>
+            </ComboBox.Items>
+        </ComboBox>
 
         <CheckBox Content="Use shared browser profile for all games"
                   IsChecked="{Binding Settings.UseSharedProfile}"
