@@ -334,8 +334,8 @@ namespace PlayniteBrowser
             }
             else // Chromium
             {
-                // Chromium uses --user-data-dir and --app flags
-                arguments = $"--user-data-dir=\"{profilePath}\" --app={browserGame.Url}";
+                // Chromium uses --user-data-dir, --app, and --start-fullscreen flags
+                arguments = $"--user-data-dir=\"{profilePath}\" --app={browserGame.Url} --start-fullscreen";
             }
 
             yield return new AutomaticPlayController(args.Game)
